@@ -65,7 +65,19 @@
         node-id (:id (:metadata (get (first n) "n")))]
     (if (nil? node-id)
       nil
-      (nn/get conn (:id (:metadata (get (first n) "n")))))))
+      (nn/get conn node-id))))
+
+(defn id->nodes [conn identity-key identity-value]
+  (let [n (cy/tquery conn
+                     (str "MATCH (n) WHERE n."
+                          (name identity-key)
+                          " =~ {" (name identity-key)
+                          "} RETURN n")
+                     {identity-key identity-value})
+        node-id (map (fn [a] (:id (:metadata a))) (map #(get % "n") n))]
+    (if (empty? node-id)
+      nil
+      (map #(nn/get conn %) node-id))))
 
 (defn id->children [conn identity-key identity-value children-key]
   (let [n (cy/tquery conn
@@ -177,3 +189,8 @@
       (do
         (node->tree conn n)
         (node->tree conn n)))))
+
+(defn autocomplete [s]
+  (let [conn (nr/connect "http://localhost:7474/db/data/")
+        n (id->nodes conn :mail (str "(?i)" s ".*"))]
+    n))
