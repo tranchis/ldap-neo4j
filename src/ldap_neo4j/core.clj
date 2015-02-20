@@ -109,7 +109,11 @@
                                  ((keyword (:ldap.parent props)) by-type)))]
       (doall (map #(fill-node! conn %) (map :content m)))
       (doall (map #(fill-node! conn %) node-colleagues))
-      (merge by-type {:colleagues (map :data node-colleagues)
+      (merge by-type {:colleagues (remove #(= ((keyword (:ldap.identity props))
+                                                (:data node))
+                                              ((keyword (:ldap.identity props))
+                                                %))
+                                          (map :data node-colleagues))
                         :origin (:data node)}))))
 
 (defn node [conn node-type identity-key identity-value register]
@@ -183,7 +187,7 @@
 
 (defn mail->tree [mail]
   (let [conn (nr/connect "http://localhost:7474/db/data/")
-        n (id->node conn :mail (str "(?i)" mail))]
+        n (id->node conn :mailNickname (str "(?i)" mail))]
     (if (nil? n)
       {}
       (do

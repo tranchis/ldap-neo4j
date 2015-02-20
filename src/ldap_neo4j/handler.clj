@@ -16,5 +16,5 @@
 (def app
   (middleware/wrap-json-body
     (middleware/wrap-json-response
-      (wrap-defaults app-routes site-defaults))))
+      app-routes)))
 
