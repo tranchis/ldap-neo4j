@@ -7,7 +7,8 @@
             [clojurewerkz.neocons.rest.relationships :as nrl]
             [clojurewerkz.neocons.rest.labels :as nl]
             [clojurewerkz.neocons.rest.nodes :as nn]
-            [clojurewerkz.neocons.rest.cypher :as cy]))
+            [clojurewerkz.neocons.rest.cypher :as cy]
+            [clojurewerkz.neocons.rest.records :as rec]))
 
 (def props (sg/load-props "ldap_client.properties"))
 
@@ -52,7 +53,7 @@
     (if (nil? d-name)
       (let [ldap-info (id->person
                         ((keyword (:ldap.identity props)) (:data node)))]
-        (nn/update conn node ldap-info))
+        (nn/update conn (rec/map->Node node) ldap-info))
       true)))
 
 (defn id->node [conn identity-key identity-value]
@@ -85,8 +86,11 @@
                           (name identity-key)
                           " = {" (name identity-key)
                           "} RETURN c")
-                     {identity-key identity-value})]
-    (map #(get % "c") n)))
+                     {identity-key identity-value})
+        m (map #(get % "c") n)
+        ids (map #(:id (:metadata %)) m)
+        nodes (map #(nn/get conn %) ids)]
+    nodes))
 
 (defn node->tree [conn node]
   (fill-node! conn node)
@@ -198,3 +202,6 @@
   (let [conn (nr/connect "http://localhost:7474/db/data/")
         n (id->nodes conn :mail (str "(?i)" s ".*"))]
     n))
+
+#_(json/read-str (:body (client/get "http://cistechfutures.net:3100/person-by-mail/")) :key-fn keyword)
+#_(mail->tree "swh10")
