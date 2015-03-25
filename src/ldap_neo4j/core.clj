@@ -12,6 +12,13 @@
 
 (def props (sg/load-props "ldap_client.properties"))
 
+(defn escape [s]
+  (println s)
+  (let [escape-map {#"\\," "\\\\5c,"
+                    #"\(" "\\\\28"
+                    #"\)" "\\\\29"}]
+    (reduce #(clojure.string/replace %1 (key %2) (val %2)) s escape-map)))
+
 (defn ldap-auth []
   (let [host (:ldap.host props)
         password (:ldap.pass props)
@@ -31,9 +38,17 @@
 (defn id->person [id]
   (let [ldap-server (ldap-auth)
         filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
-                    "(distinguishedName="
-                    (clojure.string/replace id #"\\," "\\\\5c,")
-                    "))")]
+                    "(distinguishedName=" (escape id) "))")]
+    (first (ldap/search ldap-server
+                        (:ldap.rootdn props)
+                        {:scope "one"
+                         :attributes (read-string (:ldap.attrs props))
+                         :filter filter}))))
+
+(defn mail->person [mail]
+  (let [ldap-server (ldap-auth)
+        filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
+                    "(|(mailNickname=" mail ")(mail=" mail "@bskyb.com)))")]
     (first (ldap/search ldap-server
                         (:ldap.rootdn props)
                         {:scope "one"
@@ -49,10 +64,10 @@
     {:type node-type :content (nn/get conn (url->node-id (:end rel)))}))
 
 (defn fill-node! [conn node]
-  (let [d-name (:displayName (:data node))]
-    (if (nil? d-name)
-      (let [ldap-info (id->person
-                        ((keyword (:ldap.identity props)) (:data node)))]
+  (let [d-name (:displayName (:data node))
+        id ((keyword (:ldap.identity props)) (:data node))]
+    (if (and (not (nil? id)) (nil? d-name))
+      (let [ldap-info (id->person id)]
         (nn/update conn (rec/map->Node node) ldap-info))
       true)))
 
@@ -193,7 +208,15 @@
   (let [conn (nr/connect "http://localhost:7474/db/data/")
         n (id->node conn :mailNickname (str "(?i)" mail))]
     (if (nil? n)
-      {}
+      (let [p (mail->person "jmu29")]
+        (if (nil? p)
+          {}
+          (do
+            (register->node conn (keyword (:ldap.entity props))
+                           (keyword (:ldap.identity props))
+                           (keyword (:ldap.parent props))
+                           (keyword (:ldap.children props)) p)
+            (mail->tree mail))))
       (do
         (node->tree conn n)
         (node->tree conn n)))))
@@ -205,3 +228,5 @@
 
 #_(json/read-str (:body (client/get "http://cistechfutures.net:3100/person-by-mail/")) :key-fn keyword)
 #_(mail->tree "swh10")
+#_(autocomplete "sergio alvarez")
+#_(mail->tree "jmu29")
