@@ -208,7 +208,7 @@
   (let [conn (nr/connect "http://localhost:7474/db/data/")
         n (id->node conn :mailNickname (str "(?i)" mail))]
     (if (nil? n)
-      (let [p (mail->person "jmu29")]
+      (let [p (mail->person mail)]
         (if (nil? p)
           {}
           (do
