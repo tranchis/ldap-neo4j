@@ -136,7 +136,7 @@
                         :origin (:data node)}))))
 
 (defn node [conn node-type identity-key identity-value register]
-  (let [n (id->node conn node-type identity-key identity-value)]
+  (let [n (id->node conn identity-key identity-value)]
     (if (nil? n)
       (let [new-node (nn/create conn register)]
         (if (not (nil? (node-type register)))
@@ -230,3 +230,4 @@
 #_(mail->tree "swh10")
 #_(autocomplete "sergio alvarez")
 #_(mail->tree "jmu29")
+#_(mail->tree "hbe07")
