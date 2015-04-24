@@ -13,7 +13,6 @@
 (def props (sg/load-props "ldap_client.properties"))
 
 (defn escape [s]
-  (println s)
   (let [escape-map {#"\\," "\\\\5c,"
                     #"\(" "\\\\28"
                     #"\)" "\\\\29"}]
@@ -48,7 +47,18 @@
 (defn mail->person [mail]
   (let [ldap-server (ldap-auth)
         filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
-                    "(|(mailNickname=" mail ")(mail=" mail "@bskyb.com)))")]
+                    "(|(mailNickname=" mail ")(mail=" mail "@bskyb.com)"
+                    "(SAMAccountName=" mail ")))")]
+    (first (ldap/search ldap-server
+                        (:ldap.rootdn props)
+                        {:scope "one"
+                         :attributes (read-string (:ldap.attrs props))
+                         :filter filter}))))
+
+(defn empid->person [empid]
+  (let [ldap-server (ldap-auth)
+        filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
+                    "(employeeID=" empid "))")]
     (first (ldap/search ldap-server
                         (:ldap.rootdn props)
                         {:scope "one"
@@ -206,7 +216,7 @@
 
 (defn mail->tree [mail]
   (let [conn (nr/connect "http://localhost:7474/db/data/")
-        n (id->node conn :mailNickname (str "(?i)" mail))]
+        n (id->node conn :sAMAccountName (str "(?i)" mail))]
     (if (nil? n)
       (let [p (mail->person mail)]
         (if (nil? p)
@@ -230,4 +240,7 @@
 #_(mail->tree "swh10")
 #_(autocomplete "sergio alvarez")
 #_(mail->tree "jmu29")
-#_(mail->tree "hbe07")
+#_(:sAMAccountName (empid->person "122994"))
+#_(mail->tree "sal49")
+#_(let [conn (nr/connect "http://localhost:7474/db/data/")]
+    (id->node conn :mailNickname (str "(?i)sal49")))
