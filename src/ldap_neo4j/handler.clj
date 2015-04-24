@@ -8,7 +8,6 @@
 
 (defroutes app-routes
   (GET "/person/:id" [id] (response (core/id->tree id)))
-  (GET "/person-by-sam/:id" [id] (response (core/sam->tree id)))
   (GET "/person-by-mail/:mail" [mail] (response (core/mail->tree mail)))
   (GET "/autocomplete/:s" [s] (response (core/autocomplete s)))
   (GET "/" [] "Hello World")
