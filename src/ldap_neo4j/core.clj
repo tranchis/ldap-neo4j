@@ -196,11 +196,11 @@
                    #_ (do nothing))))
              children)))))
 
-(defn ldap->neo4j [host bind-dn password root-dn
-                   filter attrs node-type identity-key
-                   parent-key children-key]
+(defn ldap->neo4j! [host bind-dn password root-dn
+                    filter attrs node-type identity-key
+                    parent-key children-key]
   (let [conn (nr/connect "http://localhost:7474/db/data/")]
-    (map #(register->node conn node-type identity-key
+    (map #(register->node conn (keyword node-type) identity-key
                           parent-key children-key %)
          #_sample-set
          (ldap-seq host bind-dn password root-dn filter attrs))))
@@ -216,7 +216,10 @@
 
 (defn mail->tree [mail]
   (let [conn (nr/connect "http://localhost:7474/db/data/")
-        n (id->node conn :sAMAccountName (str "(?i)" mail))]
+        n (id->node conn :sAMAccountName (str "(?i)" mail))
+        n (if (nil? n)
+            (id->node conn :mailNickname (str "(?i)" mail))
+            n)]
     (if (nil? n)
       (let [p (mail->person mail)]
         (if (nil? p)
@@ -236,11 +239,4 @@
         n (id->nodes conn :mail (str "(?i)" s ".*"))]
     n))
 
-#_(json/read-str (:body (client/get "http://cistechfutures.net:3100/person-by-mail/")) :key-fn keyword)
-#_(mail->tree "swh10")
-#_(autocomplete "sergio alvarez")
-#_(mail->tree "jmu29")
-#_(:sAMAccountName (empid->person "122994"))
-#_(mail->tree "sal49")
-#_(let [conn (nr/connect "http://localhost:7474/db/data/")]
-    (id->node conn :mailNickname (str "(?i)sal49")))
+
