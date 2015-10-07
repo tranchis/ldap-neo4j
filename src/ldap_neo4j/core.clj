@@ -45,15 +45,17 @@
                          :filter filter}))))
 
 (defn mail->person [mail]
-  (let [ldap-server (ldap-auth)
-        filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
+  (let [filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
                     "(|(mailNickname=" mail ")(mail=" mail "@bskyb.com)"
                     "(SAMAccountName=" mail ")))")]
-    (first (ldap/search ldap-server
-                        (:ldap.rootdn props)
-                        {:scope "one"
-                         :attributes (read-string (:ldap.attrs props))
-                         :filter filter}))))
+    (try
+      (let [ldap-server (ldap-auth)]
+        (first (ldap/search ldap-server
+                            (:ldap.rootdn props)
+                            {:scope "one"
+                             :attributes (read-string (:ldap.attrs props))
+                             :filter filter})))
+      (catch Exception e nil))))
 
 (defn empid->person [empid]
   (let [ldap-server (ldap-auth)
