@@ -38,11 +38,13 @@
   (let [ldap-server (ldap-auth)
         filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
                     "(distinguishedName=" (escape id) "))")]
-    (first (ldap/search ldap-server
-                        (:ldap.rootdn props)
-                        {:scope "one"
-                         :attributes (read-string (:ldap.attrs props))
-                         :filter filter}))))
+    (try
+      (first (ldap/search ldap-server
+                         (:ldap.rootdn props)
+                         {:scope "one"
+                          :attributes (read-string (:ldap.attrs props))
+                          :filter filter}))
+      (catch Exception e nil))))
 
 (defn mail->person [mail]
   (let [filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
@@ -61,11 +63,13 @@
   (let [ldap-server (ldap-auth)
         filter (str "(&" (str "(objectclass=" (:ldap.entity props) ")")
                     "(employeeID=" empid "))")]
-    (first (ldap/search ldap-server
-                        (:ldap.rootdn props)
-                        {:scope "one"
-                         :attributes (read-string (:ldap.attrs props))
-                         :filter filter}))))
+    (try
+      (first (ldap/search ldap-server
+                          (:ldap.rootdn props)
+                          {:scope "one"
+                           :attributes (read-string (:ldap.attrs props))
+                           :filter filter}))
+      (catch Exception e nil))))
 
 (defn url->node-id [url]
   (java.lang.Integer/parseInt
